@@ -28,19 +28,20 @@ public:
 	TSubclassOf<class UUserWidget> lockOnWidgetTemplete;
 	TSubclassOf<class UUserWidget> playerHealthWidgetTemplete;
 	TSubclassOf<class UUserWidget> inventoryWidgetTemplete;
+	TSubclassOf<class UUserWidget> dialogWidgetTemplete;
 
 
 	class UMyPlayerStaminaWidget* staminaWidget;
 	class UMyEnemyLockOnWidget* lockOnWidget;
 	class UMyPlayerHealthUserWidget* playerHealthWidget;
 	//class UMyInventoryWidget* inventoryWidget;
-
+	UUserWidget* dialogWidget;
 	APlayerController* playerCont;
 	class AMyPlayer* player;
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
+	void ManageDialogWidget(bool shouldHide);
 
 
 };

@@ -3,21 +3,19 @@
 #include "MyPlayer.h"
 #include "MyEnemyCorpseCharacter.h"
 
-// Sets default values
 AMyPlayer::AMyPlayer()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	playerSkeletalMesh = GetMesh();
 	capsule = GetCapsuleComponent();
+	movementComponent = GetCharacterMovement();
+
 	RootComponent = capsule;
 	playerAttackHitbox = CreateDefaultSubobject<UStaticMeshComponent>("PlayerAttackHitbox");
 
 	cameraComponent = CreateDefaultSubobject<UCameraComponent>("Camera");
 	cameraAttach = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
 
-
-	//playerSkeletalMesh->SetupAttachment(RootComponent);
 	playerSkeletalMesh->SetupAttachment(RootComponent);
 	playerAttackHitbox->SetupAttachment(playerSkeletalMesh);
 	cameraAttach->SetupAttachment(RootComponent);
@@ -25,11 +23,6 @@ AMyPlayer::AMyPlayer()
 	cameraAttach->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 95.0f), FRotator(0.0f, -5.0f, 0.0f));
 	cameraAttach->TargetArmLength = 325.0f;
 	cameraAttach->bEnableCameraLag = false;
-
-	movementComponent = GetCharacterMovement();
-
-
-	//cameraAttach->CameraLagSpeed = 0.1f;
 
 }
 
@@ -97,27 +90,7 @@ void AMyPlayer::BeginPlay()
 			thighArmorLHolder = Cast<UStaticMeshComponent>(Components[i]);
 		}
 
-		/*	if (Components[i]->ComponentHasTag("Body")) {
-				bodySkeletalMesh = Cast<USkeletalMeshComponent>(Components[i]);
-			}*/
 	}
-
-
-	/*for (int i = 0; i < bodySkeletalMesh->GetNumBones(); i++) {
-		FName boneName = bodySkeletalMesh->GetBoneName(i);
-		f (boneName =="pelvis" || boneName=="root") {
-			continue;
-		}
-		bodySkeletalMesh->HideBoneByName(boneName, EPhysBodyOp::PBO_None);
-	}
-	*/
-
-	/*UCrowdManager* CrowdManager = UCrowdManager::GetCurrent(this);
-	if (CrowdManager)
-	{
-		CrowdManager->RegisterAgent(Cast<ICrowdAgentInterface>(this));
-	}*/
-	//playerSkeletalMesh->SetWorldRotation(FRotator(0, 0, -90));
 
 }
 
@@ -126,95 +99,26 @@ void AMyPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (!isStaggered) {
-		if (lockedOnEnemy) {
-			FRotator newRot = UKismetMathLibrary::FindLookAtRotation(cameraAttach->GetComponentLocation(), currentlyLockedOnEnemy->GetActorLocation());
-			cameraAttach->SetWorldRotation(FRotator(newRot.Pitch, newRot.Yaw - 5, newRot.Roll));
-			playerSkeletalMesh->SetWorldRotation(FMath::RInterpTo(playerSkeletalMesh->GetComponentRotation(), FRotator(0, cameraAttach->GetComponentRotation().Yaw - 90, 0), 0.03f, 10.0f));
-
-		}
-		cameraAttach->SetWorldRotation(FRotator(FMath::Clamp(cameraAttach->GetComponentRotation().Pitch, -55.0f, 55.0f), cameraAttach->GetComponentRotation().Yaw, 0));
+		
 		deltaTimeForRolling = DeltaTime;
 		isMoving = false;
+
 		AMyPlayer::HandleStamina(DeltaTime);
 		AMyPlayer::HandleRolling();
-		if (isLightAttacking1 || isLightAttacking2) {
-			currentAttackDuration += DeltaTime;
+		AMyPlayer::HandleAttacking(DeltaTime);
 
-			for (int i = 0; i < overlappingEnemies.Num(); i++) {
-				if (!overlappingEnemies[i]->alreadyTookDamageFromAttack) {
-					overlappingEnemies[i]->MyTakeDamage(lightAttackDamage);
-					overlappingEnemies[i]->alreadyTookDamageFromAttack = true;
-				}
-			}
-		}
-
-		else {
-			currentAttackDuration = 0.0f;
-			for (int i = 0; i < overlappingEnemies.Num(); i++) {
-				overlappingEnemies[i]->alreadyTookDamageFromAttack = false;
-			}
-			//overlappingEnemies.Empty();
-		}
-
-		if (isLightAttacking1) {
-			if (currentAttackDuration >= lightAttack1AnimLenght) {
-				isLightAttacking1 = false;
-				currentAttackDuration = 0.0f;
-				if (isLightAttacking2 && shouldRemoveStaminaWhenTheNextAttackStarts) {
-					shouldRemoveStaminaAfterLightAttack = true;
-					shouldRemoveStaminaWhenTheNextAttackStarts = false;
-					for (int i = 0; i < overlappingEnemies.Num(); i++) {
-						overlappingEnemies[i]->alreadyTookDamageFromAttack = false;
-					}
-				}
-			}
-		}
-
-		if (isLightAttacking2) {
-			if (currentAttackDuration >= lightAttack2AnimLenght) {
-				isLightAttacking2 = false;
-				currentAttackDuration = 0.0f;
-				if (isLightAttacking1 && shouldRemoveStaminaWhenTheNextAttackStarts) {
-					shouldRemoveStaminaAfterLightAttack = true;
-					shouldRemoveStaminaWhenTheNextAttackStarts = false;
-					for (int i = 0; i < overlappingEnemies.Num(); i++) {
-						overlappingEnemies[i]->alreadyTookDamageFromAttack = false;
-					}
-				}
-			}
-		}
 
 		if (isRunning && currentStamina <= 0.0f) {
 			isRunning = false;
 		}
 
-		if (currentPlayerHealth <= 0) {
-			if (GetWorldTimerManager().IsTimerActive(restartLevelTimerHandle) == false) {
-				isDying = true;
-				GetWorld()->GetTimerManager().SetTimer(restartLevelTimerHandle, this, &AMyPlayer::RestartLevelAfterPlayerDie, restartLevelDuration, false);
-			}
-		}
+		AMyPlayer::HandleDeath();
 	}
 
 	if (horizontalForRoll == 0 && verticalForRoll == 0 && currentStaminaDrain == sprintStaminaDrain) {
 		currentStaminaDrain = 0.0f;
 	}
 
-	if (isBlocking) {
-		blockTime += DeltaTime;
-	}
-
-	else {
-		if (blockTime != 0.0f) {
-			/*	if (blockTime < 1.0f) {
-				//	UE_LOG(LogTemp, Warning, TEXT("Parry"));
-				}
-
-				else {
-					//UE_LOG(LogTemp, Warning, TEXT("HOLD SHIELD UP"));
-				}*/
-		}
-	}
 }
 
 
@@ -222,14 +126,9 @@ void AMyPlayer::Tick(float DeltaTime)
 // Called to bind functionality to input
 void AMyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	/*UGameplayStatics::GetPlayerController(GetWorld(), 0)->InputYawScale_DEPRECATED = cameraRotationSpeed;
-	UGameplayStatics::GetPlayerController(GetWorld(), 0)->InputPitchScale_DEPRECATED = cameraRotationSpeed;
-	*/
+	Super::SetupPlayerInputComponent(PlayerInputComponent);	
 	PlayerInputComponent->BindAxis("Horizontal", this, &AMyPlayer::MoveHorizontal);
-	PlayerInputComponent->BindAxis("Vertical", this, &AMyPlayer::MoveVertical);
-	/*PlayerInputComponent->BindAxis("RotateX", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("RotateY", this, &APawn::AddControllerPitchInput);*/
+	PlayerInputComponent->BindAxis("Vertical", this, &AMyPlayer::MoveVertical);	
 	PlayerInputComponent->BindAxis("RotateX", this, &AMyPlayer::CameraHorizontal);
 	PlayerInputComponent->BindAxis("RotateY", this, &AMyPlayer::CameraVertical);
 	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AMyPlayer::StartRun);
@@ -239,7 +138,6 @@ void AMyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("LockOnEnemy", IE_Pressed, this, &AMyPlayer::LockOnEnemy);
 	PlayerInputComponent->BindAction("Block", IE_Pressed, this, &AMyPlayer::BlockStart);
 	PlayerInputComponent->BindAction("Block", IE_Released, this, &AMyPlayer::BlockEnd);
-	//	PlayerInputComponent->BindAction("InventoryManage", IE_Pressed, this, &AMyPlayer::InventoryManage);
 }
 
 void AMyPlayer::MoveHorizontal(float horizontal) {
@@ -430,16 +328,19 @@ void AMyPlayer::DoLightAttack() {
 }
 
 void AMyPlayer::HandleStamina(float DeltaTime) {
+
 	if (shouldRemoveStaminaAfterLightAttack) {
 		currentStaminaRecoveryTime = 0.0f;
 		currentStamina -= lightAttackStaminaDrain;
-		//currentStaminaDrain = lightAttackStaminaDrain;
 	}
+
 	currentStamina -= currentStaminaDrain;
 	shouldRemoveStaminaAfterLightAttack = false;
+
 	if (!isRunning) {
 		currentStaminaDrain = 0.0f;
 	}
+
 	if (currentStaminaDrain == 0.0f) {
 		currentStaminaRecoveryTime += DeltaTime;
 	}
@@ -483,7 +384,7 @@ void AMyPlayer::HandleRolling() {
 
 		FRotator rotation = playerSkeletalMesh->GetComponentRotation();
 		FRotator yawRotation(0, rotation.Yaw, 0);
-		FVector direction = FVector(0, 0, 0);//FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
+		FVector direction = FVector(0, 0, 0);
 		if (lockedOnEnemy) {
 
 			if (horizontalForRoll != 0) {
@@ -498,6 +399,7 @@ void AMyPlayer::HandleRolling() {
 		if (direction.IsZero()) {
 			direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
 		}
+
 		movementComponent->MaxWalkSpeed = rollSpeed;
 		AddMovementInput(direction, 1);
 
@@ -813,4 +715,71 @@ void AMyPlayer::DeEquipItem(FName type) {
 		thighArmorRHolder->SetStaticMesh(nullptr);
 	}
 
+}
+
+void AMyPlayer::HandleAttacking(float DeltaTime) {
+	if (isLightAttacking1 || isLightAttacking2) {
+		currentAttackDuration += DeltaTime;
+
+		for (int i = 0; i < overlappingEnemies.Num(); i++) {
+			if (!overlappingEnemies[i]->alreadyTookDamageFromAttack) {
+				overlappingEnemies[i]->MyTakeDamage(lightAttackDamage);
+				overlappingEnemies[i]->alreadyTookDamageFromAttack = true;
+			}
+		}
+	}
+
+	else {
+		currentAttackDuration = 0.0f;
+		for (int i = 0; i < overlappingEnemies.Num(); i++) {
+			overlappingEnemies[i]->alreadyTookDamageFromAttack = false;
+		}
+	}
+
+	if (isLightAttacking1) {
+		if (currentAttackDuration >= lightAttack1AnimLenght) {
+			isLightAttacking1 = false;
+			currentAttackDuration = 0.0f;
+			if (isLightAttacking2 && shouldRemoveStaminaWhenTheNextAttackStarts) {
+				shouldRemoveStaminaAfterLightAttack = true;
+				shouldRemoveStaminaWhenTheNextAttackStarts = false;
+				for (int i = 0; i < overlappingEnemies.Num(); i++) {
+					overlappingEnemies[i]->alreadyTookDamageFromAttack = false;
+				}
+			}
+		}
+	}
+
+	if (isLightAttacking2) {
+		if (currentAttackDuration >= lightAttack2AnimLenght) {
+			isLightAttacking2 = false;
+			currentAttackDuration = 0.0f;
+			if (isLightAttacking1 && shouldRemoveStaminaWhenTheNextAttackStarts) {
+				shouldRemoveStaminaAfterLightAttack = true;
+				shouldRemoveStaminaWhenTheNextAttackStarts = false;
+				for (int i = 0; i < overlappingEnemies.Num(); i++) {
+					overlappingEnemies[i]->alreadyTookDamageFromAttack = false;
+				}
+			}
+		}
+	}
+}
+
+void AMyPlayer::HandleDeath() {
+	if (currentPlayerHealth <= 0) {
+		if (GetWorldTimerManager().IsTimerActive(restartLevelTimerHandle) == false) {
+			isDying = true;
+			GetWorld()->GetTimerManager().SetTimer(restartLevelTimerHandle, this, &AMyPlayer::RestartLevelAfterPlayerDie, restartLevelDuration, false);
+		}
+	}
+}
+
+void AMyPlayer::HandleCamera() {
+	if (lockedOnEnemy) {
+		FRotator newRot = UKismetMathLibrary::FindLookAtRotation(cameraAttach->GetComponentLocation(), currentlyLockedOnEnemy->GetActorLocation());
+		cameraAttach->SetWorldRotation(FRotator(newRot.Pitch, newRot.Yaw - 5, newRot.Roll));
+		playerSkeletalMesh->SetWorldRotation(FMath::RInterpTo(playerSkeletalMesh->GetComponentRotation(), FRotator(0, cameraAttach->GetComponentRotation().Yaw - 90, 0), 0.03f, 10.0f));
+
+	}
+	cameraAttach->SetWorldRotation(FRotator(FMath::Clamp(cameraAttach->GetComponentRotation().Pitch, -55.0f, 55.0f), cameraAttach->GetComponentRotation().Yaw, 0));
 }

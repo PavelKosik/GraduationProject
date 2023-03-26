@@ -17,30 +17,29 @@ class MYSCHOOLPROJECT_API UMyPlayerAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 public:
 
-	UMyPlayerAnimInstance();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		bool isMoving{ false };
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		bool isRunning{ false };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		bool isLightAttacking1{ false };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		bool isLightAttacking2{ false };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		bool isRolling{ false };
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		bool isStaggered{ false };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		bool isDying{ false };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		bool isBlocking{ false };
 	
 	class AMyPlayer* myPlayer;

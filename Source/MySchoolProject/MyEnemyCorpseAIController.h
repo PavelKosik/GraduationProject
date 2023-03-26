@@ -7,7 +7,7 @@
 #include "NavigationSystem.h"
 #include "Navigation/CrowdFollowingComponent.h"
 #include "Navigation/CrowdManager.h"
-#include "MyCorpseEnemyAIController.generated.h"
+#include "MyEnemyCorpseAIController.generated.h"
 
 /**
  *
@@ -15,12 +15,12 @@
 class MyPlayer;
 class MyEnemyCorpseCharacter;
 UCLASS()
-class MYSCHOOLPROJECT_API AMyCorpseEnemyAIController : public AAIController
+class MYSCHOOLPROJECT_API AMyEnemyCorpseAIController : public AAIController
 {
 	GENERATED_BODY()
 
 public:
-	AMyCorpseEnemyAIController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	AMyEnemyCorpseAIController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -78,9 +78,9 @@ public:
 
 	bool addedPoint{ false };
 	bool isAttacking{ false };
-
+	bool AttackingNPC{ true };
 	void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
-	void FollowPath();
+	//void FollowPath();
 	void BeginPlay() override;
 	void Tick(float DeltaTime) override;
 	void StopAttack();

@@ -4,9 +4,6 @@
 #include "MyPlayerAnimInstance.h"
 #include "MyPlayer.h"
 
-UMyPlayerAnimInstance::UMyPlayerAnimInstance() {
-
-}
 
 void UMyPlayerAnimInstance::BlueprintBeginPlay() {
 	Super::BlueprintBeginPlay();
@@ -28,6 +25,7 @@ void UMyPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 }
 
 void UMyPlayerAnimInstance::AssingValues() {
+
 	isRunning = myPlayer->isRunning;
 	isMoving = myPlayer->isMoving;
 	isLightAttacking1 = myPlayer->isLightAttacking1;
@@ -36,4 +34,6 @@ void UMyPlayerAnimInstance::AssingValues() {
 	isStaggered = myPlayer->isStaggered;
 	isDying = myPlayer->isDying;
 	isBlocking = myPlayer->isBlocking;
+
+
 }

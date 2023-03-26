@@ -10,11 +10,13 @@ AMyHUD::AMyHUD() {
 	static ConstructorHelpers::FClassFinder<UMyEnemyLockOnWidget> lockOnWidgetAsset(TEXT("/Game/Blueprints/UI/Player/MyEnemyLockOnWidget_BP"));
 	static ConstructorHelpers::FClassFinder<UMyPlayerHealthUserWidget> playerHealthWidgetAsset(TEXT("/Game/Blueprints/UI/Player/MyPlayerHealthUserWidget_BP"));
 	//static ConstructorHelpers::FClassFinder<UMyInventoryWidget> inventoryWidgetAsset(TEXT("/Game/Blueprints/UI/MyInventoryWidget_BP"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> dialogWidgetAsset(TEXT("/Game/Blueprints/UI/DialogUserWidget_BP"));
 
 
 	staminaWidgetTemplete = staminaWidgetAsset.Class;
 	lockOnWidgetTemplete = lockOnWidgetAsset.Class;
 	playerHealthWidgetTemplete = playerHealthWidgetAsset.Class;
+	dialogWidgetTemplete = dialogWidgetAsset.Class;
 	//inventoryWidgetTemplete = inventoryWidgetAsset.Class;
 
 }
@@ -90,24 +92,46 @@ void AMyHUD::Tick(float DeltaTime) {
 			}
 		}
 
-	/*	if (player->showInventory) {
-			if (inventoryWidget == nullptr) {
-				inventoryWidget = CreateWidget<UMyInventoryWidget>(GetWorld(), inventoryWidgetTemplete);
-			}
-			//	screenPos = screenPos - FVector2D(-250, -250);
-			//	UCanvasPanelSlot* slot = Cast<UCanvasPanelSlot>(lockOnWidget->Image_30->Slot);
-				//if (slot) {
+		/*	if (player->showInventory) {
+				if (inventoryWidget == nullptr) {
+					inventoryWidget = CreateWidget<UMyInventoryWidget>(GetWorld(), inventoryWidgetTemplete);
+				}
+				//	screenPos = screenPos - FVector2D(-250, -250);
+				//	UCanvasPanelSlot* slot = Cast<UCanvasPanelSlot>(lockOnWidget->Image_30->Slot);
+					//if (slot) {
 
-				//	slot->SetPosition(screenPos);
-			if (!inventoryWidget->GetIsVisible()) {
-				inventoryWidget->AddToViewport();
+					//	slot->SetPosition(screenPos);
+				if (!inventoryWidget->GetIsVisible()) {
+					inventoryWidget->AddToViewport();
+				}
 			}
-		}
 
-		else {
-			if (inventoryWidget != nullptr) {
-				inventoryWidget->RemoveFromViewport();
-			}
-		}*/
+			else {
+				if (inventoryWidget != nullptr) {
+					inventoryWidget->RemoveFromViewport();
+				}
+			}*/
 	}
+
+	
+}
+
+void AMyHUD::ManageDialogWidget(bool shouldHide) {
+	
+	if (dialogWidget == nullptr) {
+		dialogWidget = CreateWidget<UUserWidget>(GetWorld(), dialogWidgetTemplete);
+	}
+	
+	if (shouldHide) {
+		if (dialogWidget != nullptr) {
+			dialogWidget->RemoveFromViewport();
+		}
+	}
+
+	else {
+		if (!dialogWidget->GetIsVisible()) {
+			dialogWidget->AddToViewport();
+		}
+	}
+
 }

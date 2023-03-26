@@ -1,29 +1,34 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyCorpseEnemyAIController.h"
+#include "MyEnemyCorpseAIController.h"
 #include "MyPlayer.h"
 #include "MyEnemyCorpseCharacter.h"
 
 
-AMyCorpseEnemyAIController::AMyCorpseEnemyAIController(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCrowdFollowingComponent>(TEXT("PathFollowingComponent"))) {
+AMyEnemyCorpseAIController::AMyEnemyCorpseAIController(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCrowdFollowingComponent>(TEXT("PathFollowingComponent"))) {
 
 }
 
-void AMyCorpseEnemyAIController::BeginPlay() {
+void AMyEnemyCorpseAIController::BeginPlay() {
 	Super::BeginPlay();
 
 	PrimaryActorTick.bCanEverTick = true;
 	myPawn = GetPawn();
 	//navMesh = UNavigationSystemV1::GetCurrent(this);
 	startingPos = GetNavAgentLocation();
-	AMyCorpseEnemyAIController::FollowPath();
+	//AMyCorpseEnemyAIController::FollowPath();
 
 }
 
-void AMyCorpseEnemyAIController::Tick(float DeltaTime) {
+void AMyEnemyCorpseAIController::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-
+	if (AttackingNPC) {
+		if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= distanceToSeePlayerAt) {
+			myEnemyLogic->isAttacking = false;
+			AttackingNPC = false;
+		}
+	}
 	if (IsFollowingAPath()) {
 		myEnemyLogic->isMoving = true;
 	}
@@ -36,12 +41,12 @@ void AMyCorpseEnemyAIController::Tick(float DeltaTime) {
 					if (!GetWorldTimerManager().IsTimerActive(enemyAttackTimerHandle) && !GetWorldTimerManager().IsTimerActive(waitTimeBetweenAttacksTimerHandle)) {
 						myEnemyLogic->isAttacking = true;
 						StopMovement();
-						GetWorld()->GetTimerManager().SetTimer(enemyAttackTimerHandle, this, &AMyCorpseEnemyAIController::StopAttack, attackLength, false);
-						GetWorld()->GetTimerManager().SetTimer(waitTimeBetweenAttacksTimerHandle, this, &AMyCorpseEnemyAIController::RandomizeWaitTime, waitTimeBetweenAttacks, false);
+						GetWorld()->GetTimerManager().SetTimer(enemyAttackTimerHandle, this, &AMyEnemyCorpseAIController::StopAttack, attackLength, false);
+						GetWorld()->GetTimerManager().SetTimer(waitTimeBetweenAttacksTimerHandle, this, &AMyEnemyCorpseAIController::RandomizeWaitTime, waitTimeBetweenAttacks, false);
 					}
 
 					else {
-						AMyCorpseEnemyAIController::SteerAroundPlayer();
+						AMyEnemyCorpseAIController::SteerAroundPlayer();
 					}
 				}
 
@@ -52,7 +57,7 @@ void AMyCorpseEnemyAIController::Tick(float DeltaTime) {
 					}
 
 					else {
-						AMyCorpseEnemyAIController::SteerAroundPlayer();
+						AMyEnemyCorpseAIController::SteerAroundPlayer();
 					}
 				}
 			}
@@ -82,7 +87,7 @@ void AMyCorpseEnemyAIController::Tick(float DeltaTime) {
 			*/
 		}
 
-		AMyCorpseEnemyAIController::HandlePlayerTakeDamageTime(DeltaTime);
+		AMyEnemyCorpseAIController::HandlePlayerTakeDamageTime(DeltaTime);
 
 		/*if (!myEnemyLogic->isAttacking) {
 
@@ -176,7 +181,7 @@ void AMyCorpseEnemyAIController::Tick(float DeltaTime) {
 	}
 }
 
-void AMyCorpseEnemyAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) {
+void AMyEnemyCorpseAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) {
 	Super::OnMoveCompleted(RequestID, Result);
 
 	/*if (myEnemyLogic) {
@@ -195,7 +200,7 @@ void AMyCorpseEnemyAIController::OnMoveCompleted(FAIRequestID RequestID, const F
 		return;
 	}
 
-	if (finishedPath == false) {
+	/*if (finishedPath == false) {
 
 		if (currentPathIndex + 1 < myEnemyLogic->waypointPositons.Num()) {
 			currentPathIndex += 1;
@@ -227,7 +232,7 @@ void AMyCorpseEnemyAIController::OnMoveCompleted(FAIRequestID RequestID, const F
 			return;
 		}
 	}
-
+	*/
 	/*if (steeringPlayer == false) {
 		if (!chasingPlayer) {
 			if (steeringPlayer == false) {
@@ -290,7 +295,7 @@ void AMyCorpseEnemyAIController::OnMoveCompleted(FAIRequestID RequestID, const F
 }
 
 
-void AMyCorpseEnemyAIController::FollowPath() {
+/*void AMyCorpseEnemyAIController::FollowPath() {
 	if (myPawn) {
 		navMesh = UNavigationSystemV1::GetCurrent(this);
 
@@ -311,16 +316,16 @@ void AMyCorpseEnemyAIController::FollowPath() {
 		AMyCorpseEnemyAIController::FollowPath();
 	}
 }
-
-void AMyCorpseEnemyAIController::StopAttack() {
+*/
+void AMyEnemyCorpseAIController::StopAttack() {
 	myEnemyLogic->isAttacking = false;
 }
 
-void AMyCorpseEnemyAIController::RandomizeWaitTime() {
+void AMyEnemyCorpseAIController::RandomizeWaitTime() {
 	waitTimeBetweenAttacks = FMath::RandRange(minWaitTimeBetweenAttacks, maxWaitTimeBetweenAttacks);
 }
 
-void AMyCorpseEnemyAIController::SteerAroundPlayer() {
+void AMyEnemyCorpseAIController::SteerAroundPlayer() {
 	if (IsFollowingAPath() == false) {
 		if (myEnemyLogic) {
 			//if (myEnemyLogic->possibleDirections.Num() > 0) {
@@ -356,14 +361,14 @@ void AMyCorpseEnemyAIController::SteerAroundPlayer() {
 
 			else {
 				navMesh = UNavigationSystemV1::GetCurrent(this);
-				AMyCorpseEnemyAIController::SteerAroundPlayer();
+				AMyEnemyCorpseAIController::SteerAroundPlayer();
 			}
 
 		}
 	}
 }
 
-void AMyCorpseEnemyAIController::HandlePlayerTakeDamageTime(float DeltaTime) {
+void AMyEnemyCorpseAIController::HandlePlayerTakeDamageTime(float DeltaTime) {
 	if (myEnemyLogic->isAttacking) {
 		currentAttackTime += DeltaTime;
 	}

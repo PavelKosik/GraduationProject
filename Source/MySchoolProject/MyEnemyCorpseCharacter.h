@@ -12,7 +12,7 @@
 #include "MyEnemyCorpseCharacter.generated.h"
 
 class MyPlayer;
-class MyCorpseEnemyAIController;
+class MyEnemyCorpseAIController;
 class MyEnemyHealthWidgetComponent;
 class MyEnemyHealthUserWidget;
 UCLASS()
@@ -32,9 +32,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float maxHealth{ 400 };
 
@@ -53,18 +50,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float attackDamage{ 100.0f };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Waypoints", META = (DisplayName = "StaticMeshPlacer"))
-		UStaticMeshComponent* staticMeshPlacer;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Waypoints", META = (Name = "Spawn Waypoint", DisplayAfter = "StaticMeshPlacer"))
-		bool shouldSpawnwaypoint{ false };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Waypoints")
-		TArray<FVector> waypointPositons;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Waypoints")
-		bool displayWaypoints{ true };
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UMyEnemyHealthWidgetComponent* enemyHealthWidgetComponent;
 
@@ -79,14 +64,11 @@ public:
 
 	class UMyEnemyHealthUserWidget* enemyHealthWidget;
 	
-	class AMyCorpseEnemyAIController* myCont;
+	class AMyEnemyCorpseAIController* myCont;
 	FTimerHandle showHealthAfterTakenDamageTimerHandle;
 
 	void MyTakeDamage(float damage);
 
-	virtual void OnConstruction(const FTransform& Transform) override;
-
-	virtual bool ShouldTickIfViewportsOnly() const override;
 	virtual void PostInitializeComponents() override;
 	void ShowHealthBar();
 	void HideHealthBar();
