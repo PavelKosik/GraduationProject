@@ -15,348 +15,144 @@ void AMyEnemyCorpseAIController::BeginPlay() {
 
 	PrimaryActorTick.bCanEverTick = true;
 	myPawn = GetPawn();
-	//navMesh = UNavigationSystemV1::GetCurrent(this);
 	startingPos = GetNavAgentLocation();
-	//AMyCorpseEnemyAIController::FollowPath();
-
 }
 
 void AMyEnemyCorpseAIController::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	if (AttackingNPC) {
-		if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= distanceToSeePlayerAt) {
-			myEnemyLogic->isAttacking = false;
-			AttackingNPC = false;
+	if (myEnemyLogic != nullptr) {
+		if (AttackingNPC && myEnemyLogic->player != nullptr) {
+			//enemy attacks the NPC before he meets the player
+			//this makes him stop attacking the NPC and 
+			//makes him start paying attention to the player once he gets close enough
+			if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= distanceToSeePlayerAt) {
+				myEnemyLogic->isAttacking = false;
+				AttackingNPC = false;
+			}
+		}
+
+		//each time enemy is walking somewhere make sure it plays the walking animation
+		if (IsFollowingAPath() && !myEnemyLogic->isMoving) {
+			myEnemyLogic->isMoving = true;
 		}
 	}
-	if (IsFollowingAPath()) {
-		myEnemyLogic->isMoving = true;
-	}
 
-	if (myEnemyLogic) {
+
+	if (myEnemyLogic != nullptr && myEnemyLogic->player != nullptr) {
 
 		if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= distanceToSeePlayerAt) {
 			if (!myEnemyLogic->isAttacking) {
 				if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= distanceToStartAttackingAt) {
+
+					//if enemy is near enough to player and can attack him
 					if (!GetWorldTimerManager().IsTimerActive(enemyAttackTimerHandle) && !GetWorldTimerManager().IsTimerActive(waitTimeBetweenAttacksTimerHandle)) {
+
+						//plays the attack animation
 						myEnemyLogic->isAttacking = true;
+
+						//stops the enemy from moving in the attack animation
 						StopMovement();
+
+						//after the animation finishes stops the attack
 						GetWorld()->GetTimerManager().SetTimer(enemyAttackTimerHandle, this, &AMyEnemyCorpseAIController::StopAttack, attackLength, false);
+
+						//sets up timer between enemy attacks
 						GetWorld()->GetTimerManager().SetTimer(waitTimeBetweenAttacksTimerHandle, this, &AMyEnemyCorpseAIController::RandomizeWaitTime, waitTimeBetweenAttacks, false);
 					}
 
+					//if enemy can't attack player because he is waiting for the timer between attacks to run out
+					//steering = walking around player
 					else {
 						AMyEnemyCorpseAIController::SteerAroundPlayer();
 					}
 				}
 
+				//if enemy is too far from player to attack him
 				else {
+
+					//if enemy should attack player he walks towards him
 					if (!GetWorldTimerManager().IsTimerActive(waitTimeBetweenAttacksTimerHandle)) {
 						chasingPlayer = true;
 						MoveToLocation(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation());
 					}
 
+					//else he just walks around him
 					else {
 						AMyEnemyCorpseAIController::SteerAroundPlayer();
 					}
 				}
 			}
 
+			//if enemy is attacking make sure he is not moving
 			else {
 				StopMovement();
-				/*
-				if (GetWorldTimerManager().IsTimerActive(waitTimeBetweenAttacksTimerHandle)) {
-					steeringPlayer = true;
-					AMyCorpseEnemyAIController::SteerAroundPlayer();
-				}
-
-				else {
-					if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) > distanceToStartAttackingAt) {
-						chasingPlayer = true;
-						//myEnemyLogic->isAttacking = false;
-						steeringPlayer = false;
-						MoveToLocation(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation());
-					}
-				}*/
-
 			}
 
-			/*else {
-				StopMovement();
-			}
-			*/
-		}
+			//handles that player doesn't get hit more times from the same attack
+			AMyEnemyCorpseAIController::HandlePlayerTakeDamageTime(DeltaTime);
 
-		AMyEnemyCorpseAIController::HandlePlayerTakeDamageTime(DeltaTime);
-
-		/*if (!myEnemyLogic->isAttacking) {
-
-			//walk to player when first see him
-			if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= distanceToSeePlayerAt) {
-				if (steeringPlayer == false) {
-					chasingPlayer = true;
-					MoveToLocation(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation());
-					//shouldReturnToPos = true;
-				}
-			}
-
-			else {
-				/*if (shouldReturnToPos) {
-					chasingPlayer = false;
-					steeringPlayer = false;
-					myEnemyLogic->isAttacking = false;
-					AMyCorpseEnemyAIController::FollowPath();
-				}*/
-				/*}
-			}
-			if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= distanceToStartAttackingAt) {
-				if (GetWorldTimerManager().IsTimerActive(enemyAttackTimerHandle) == false) {
-					if (GetWorldTimerManager().IsTimerActive(waitTimeBetweenAttacksTimerHandle) == false) {
-						myEnemyLogic->isAttacking = true;
-						steeringPlayer = false;
-						StopMovement();
-						GetWorld()->GetTimerManager().SetTimer(waitTimeBetweenAttacksTimerHandle, this, &AMyCorpseEnemyAIController::RandomizeWaitTime, waitTimeBetweenAttacks, false);
-						GetWorld()->GetTimerManager().SetTimer(enemyAttackTimerHandle, this, &AMyCorpseEnemyAIController::StopAttack, attackLength, false);
-						//myEnemyLogic->spline->AddSplinePoint(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation(), ESplineCoordinateSpace::World, true);
-					}
-
-					else {
-						if (steeringPlayer == false) {
-							StopMovement();
-						}
-						AMyCorpseEnemyAIController::SteerAroundPlayer();
-					}
-				}
-			}
-
-			else {
-				if (chasingPlayer) {
-					MoveToLocation(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation());
-				}
-			}
-
-			if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) >= maxSteerDistance && steeringPlayer) {
-				StopMovement();
-				MoveToLocation(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation());
-			}
-
-			if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= minSteerDistance && steeringPlayer) {
-				StopMovement();
-				FVector currentActorForward = myEnemyLogic->player->GetActorLocation();
-				//FVector actorBackward = currentActorForward.RotateAngleAxis(320, FVector(0, 0, 1));// currentActorForward + FVector(0, 0, 150);//.RotateAngleAxis(180, FVector(0, 0, 1));
-				//actorBackward = actorBackward + GetNavAgentLocation();
-				FVector forwardDirection = myEnemyLogic->player->GetActorLocation() - GetNavAgentLocation();
-				forwardDirection = FVector(-forwardDirection.X, -forwardDirection.Y, forwardDirection.Z);
-				forwardDirection.Normalize();
-				//DrawDebugLine(GetWorld(), GetNavAgentLocation() + FVector(0, 0, 150), GetNavAgentLocation() + FVector(forwardDirection.X * 100, forwardDirection.Y* 100, 150), FColor::Red, false, -1, 0, 10);
-				FNavLocation result;
-				bool aa = navMesh->GetRandomPointInNavigableRadius(GetNavAgentLocation() + FVector(forwardDirection.X * 450, forwardDirection.Y * 450, 0), 1.0f, result);
-				FString output = aa ? "true" : "false";
-				UE_LOG(LogTemp, Warning, TEXT("MANAGED TO FIND: %s"), *output);
-				DrawDebugPoint(GetWorld(), result, 50, FColor::Red, false);
-
-				MoveToLocation(result);
-				if (IsFollowingAPath()) {
-					UE_LOG(LogTemp, Warning, TEXT("TRUE TRUE TRUE TRUE"));
-				}
-				//MoveToLocation(actorBackward * 200);
-			}
 		}
 
 
-
-	}
-
-	if (FVector::Distance(GetNavAgentLocation(), startingPos) > maxAllowedDistanceFromStartPos) {
-		MoveToLocation(startingPos);
-		chasingPlayer = false;
-		myEnemyLogic->isAttacking = false;
-	}
-	//}
-
-	/*else {
-		UE_LOG(LogTemp, Warning, TEXT("TRYING TO GET CROWD MANAGER"));
-		//CrowdManager = UCrowdManager::GetCurrent(this);
-	}*/
 	}
 }
 
 void AMyEnemyCorpseAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) {
 	Super::OnMoveCompleted(RequestID, Result);
 
-	/*if (myEnemyLogic) {
-		if (!myEnemyLogic->isAttacking) {
-			isAttacking = myEnemyLogic->isAttacking;
-		}
-	}
-	*/
-	/*if (steeringPlayer) {
-		if (GetWorldTimerManager().IsTimerActive(waitTimeBetweenAttacksTimerHandle)) {
-			AMyCorpseEnemyAIController::SteerAroundPlayer();
-		}
 
-	}*/
-	if (chasingPlayer || myEnemyLogic->isAttacking) {
-		return;
-	}
-
-	/*if (finishedPath == false) {
-
-		if (currentPathIndex + 1 < myEnemyLogic->waypointPositons.Num()) {
-			currentPathIndex += 1;
-			AMyCorpseEnemyAIController::FollowPath();
-			return;
-		}
-
-		else {
-
-			finishedPath = true;
-			currentPathIndex -= 1;
-			AMyCorpseEnemyAIController::FollowPath();
+	if (myEnemyLogic != nullptr) {
+		if (chasingPlayer || myEnemyLogic->isAttacking) {
 			return;
 		}
 	}
-
-	else {
-		if (currentPathIndex - 1 >= 0) {
-			currentPathIndex -= 1;
-			AMyCorpseEnemyAIController::FollowPath();
-			return;
-		}
-
-		else {
-
-			finishedPath = false;
-			currentPathIndex += 1;
-			AMyCorpseEnemyAIController::FollowPath();
-			return;
-		}
-	}
-	*/
-	/*if (steeringPlayer == false) {
-		if (!chasingPlayer) {
-			if (steeringPlayer == false) {
-				/*if (shouldReturnToPos) {
-					shouldReturnToPos = false;
-				}*/
-				/*	if (finishedPath == false) {
-						if (currentPathIndex + 1 < myEnemyLogic->waypointPositons.Num()) {
-							currentPathIndex += 1;
-							AMyCorpseEnemyAIController::FollowPath();
-							return;
-						}
-
-						else {
-
-							finishedPath = true;
-							currentPathIndex -= 1;
-							AMyCorpseEnemyAIController::FollowPath();
-							return;
-						}
-					}
-
-					else {
-						if (currentPathIndex - 1 >= 0) {
-							currentPathIndex -= 1;
-							AMyCorpseEnemyAIController::FollowPath();
-							return;
-						}
-
-						else {
-
-							finishedPath = false;
-							currentPathIndex += 1;
-							AMyCorpseEnemyAIController::FollowPath();
-							return;
-						}
-					}
-				}
-
-				/*else {
-					if (myEnemyLogic) {
-						if (myEnemyLogic->player) {
-							if (IsFollowingAPath() == false) {
-								//MoveToActor(myEnemyLogic->player, distanceToStopWalkingToPlayerAt, true);
-								MoveToLocation(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation(), distanceToStopWalkingToPlayerAt, true);
-							}
-						}
-					}
-
-				}*/
-				/*	}
-				}
-			}*/
-
-
-			/*if (steeringPlayer && GetWorldTimerManager().IsTimerActive(waitTimeBetweenAttacksTimerHandle)) {
-				AMyCorpseEnemyAIController::SteerAroundPlayer();
-			}*/
-
 }
 
-
-/*void AMyCorpseEnemyAIController::FollowPath() {
-	if (myPawn) {
-		navMesh = UNavigationSystemV1::GetCurrent(this);
-
-		if (navMesh) {
-			if (myEnemyLogic->waypointPositons.Num() > 0) {
-				MoveToLocation(FVector(myEnemyLogic->waypointPositons[currentPathIndex].X, myEnemyLogic->waypointPositons[currentPathIndex].Y, myPawn->GetNavAgentLocation().Z));
-			}
-		}
-
-		else {
-			navMesh = UNavigationSystemV1::GetCurrent(this);
-			AMyCorpseEnemyAIController::FollowPath();
-		}
-	}
-
-	else {
-		myPawn = GetPawn();
-		AMyCorpseEnemyAIController::FollowPath();
-	}
-}
-*/
 void AMyEnemyCorpseAIController::StopAttack() {
-	myEnemyLogic->isAttacking = false;
+	//stops the attack
+	if (myEnemyLogic != nullptr) {
+		myEnemyLogic->isAttacking = false;
+	}
 }
 
 void AMyEnemyCorpseAIController::RandomizeWaitTime() {
+	//enemy waits between his attack so player has time to do stuff
+	//the wait duration is random
 	waitTimeBetweenAttacks = FMath::RandRange(minWaitTimeBetweenAttacks, maxWaitTimeBetweenAttacks);
 }
 
 void AMyEnemyCorpseAIController::SteerAroundPlayer() {
+	//if the enemy is currently walking somewhere there is no need to steer
 	if (IsFollowingAPath() == false) {
-		if (myEnemyLogic) {
-			//if (myEnemyLogic->possibleDirections.Num() > 0) {
-			if (navMesh) {
-				//	if (CrowdManager) {
-				UE_LOG(LogTemp, Warning, TEXT("Steering around player"));
-
+		if (myEnemyLogic != nullptr) {
+			if (navMesh != nullptr) {
 				steeringPlayer = true;
+				if (myEnemyLogic->player != nullptr) {
 
-				if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= minSteerDistance) {
-					StopMovement();
-					FVector forwardDirection = myEnemyLogic->player->GetActorLocation() - GetNavAgentLocation();
-					forwardDirection = FVector(-forwardDirection.X, -forwardDirection.Y, forwardDirection.Z);
-					forwardDirection.Normalize();
-					FNavLocation result;
-					navMesh->GetRandomPointInNavigableRadius(GetNavAgentLocation() + FVector(forwardDirection.X * 50, forwardDirection.Y * 50, 0), 1.0f, result);
-					MoveToLocation(result);
+					//if enemy is too close to the player he walks to opposite direction from the player
+					if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) <= minSteerDistance) {
+						StopMovement();
+						FVector forwardDirection = myEnemyLogic->player->GetActorLocation() - GetNavAgentLocation();
+						forwardDirection = FVector(-forwardDirection.X, -forwardDirection.Y, forwardDirection.Z);
+						forwardDirection.Normalize();
+						FNavLocation result;
+						navMesh->GetRandomPointInNavigableRadius(GetNavAgentLocation() + FVector(forwardDirection.X * 50, forwardDirection.Y * 50, 0), 1.0f, result);
+						MoveToLocation(result);
+					}
+
+					//if enemy is too far he walks to the player
+					if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) >= maxSteerDistance) {
+						StopMovement();
+						MoveToLocation(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation());
+					}
+
+					//if enemy is not too far or too close he just walks to a random point around himself
+					if (!IsFollowingAPath()) {
+						FNavLocation randomLocation;
+						navMesh->GetRandomPointInNavigableRadius(GetNavAgentLocation(), 200.0f, randomLocation);
+						MoveToLocation(randomLocation);
+					}
 				}
-
-				if (FVector::Distance(GetNavAgentLocation(), myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation()) >= maxSteerDistance) {
-					StopMovement();
-					MoveToLocation(myEnemyLogic->player->playerSkeletalMesh->GetComponentLocation());
-				}
-
-				if (!IsFollowingAPath()) {
-					FNavLocation randomLocation;
-					navMesh->GetRandomPointInNavigableRadius(GetNavAgentLocation(), 200.0f, randomLocation);
-					MoveToLocation(randomLocation);
-				}
-
-
 			}
 
 			else {
@@ -369,17 +165,24 @@ void AMyEnemyCorpseAIController::SteerAroundPlayer() {
 }
 
 void AMyEnemyCorpseAIController::HandlePlayerTakeDamageTime(float DeltaTime) {
-	if (myEnemyLogic->isAttacking) {
-		currentAttackTime += DeltaTime;
-	}
+	//handles how long the attack animation has been playing
+	if (myEnemyLogic != nullptr) {
+		if (myEnemyLogic->isAttacking) {
+			currentAttackTime += DeltaTime;
+		}
 
-	else {
-		currentAttackTime = 0.0f;
-	}
+		//resets the timer if enemy stops attacking
+		else {
+			currentAttackTime = 0.0f;
+		}
 
-	if (currentAttackTime >= attackTime) {
-		playerTookDamageFromCurrentAttack = false;
-		currentAttackTime = 0.0f;
-		numberOfDoneAttacks++;
+		//if attack time is longer than the animation time
+		//the attack timer is reseted and player can take damage from attack again
+		//if this wasn't the case player could take damage more than once from the same attacks
+		if (currentAttackTime >= attackTime) {
+			playerTookDamageFromCurrentAttack = false;
+			currentAttackTime = 0.0f;
+			numberOfDoneAttacks++;
+		}
 	}
 }

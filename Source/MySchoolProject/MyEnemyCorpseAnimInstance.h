@@ -28,7 +28,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool isAttacking{ false };
 
-	class AMyEnemyCorpseCharacter* myCorpse;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class AMyEnemyCorpseCharacter* myCorpse;
 
 
 	virtual void BlueprintBeginPlay();

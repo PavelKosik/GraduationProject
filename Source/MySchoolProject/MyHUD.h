@@ -6,10 +6,11 @@
 #include "GameFramework/HUD.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Kismet/GameplayStatics.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "MyHUD.generated.h"
 
 /**
- * 
+ *
  */
 class MyPlayerStaminaWidget;
 class MyPlayer;
@@ -20,7 +21,7 @@ UCLASS()
 class MYSCHOOLPROJECT_API AMyHUD : public AHUD
 {
 	GENERATED_BODY()
-	
+
 public:
 	AMyHUD();
 
@@ -29,19 +30,31 @@ public:
 	TSubclassOf<class UUserWidget> playerHealthWidgetTemplete;
 	TSubclassOf<class UUserWidget> inventoryWidgetTemplete;
 	TSubclassOf<class UUserWidget> dialogWidgetTemplete;
+	TSubclassOf<class UUserWidget> escMenuWidgetTemplete;
 
 
-	class UMyPlayerStaminaWidget* staminaWidget;
-	class UMyEnemyLockOnWidget* lockOnWidget;
-	class UMyPlayerHealthUserWidget* playerHealthWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UMyPlayerStaminaWidget* staminaWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UMyEnemyLockOnWidget* lockOnWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UMyPlayerHealthUserWidget* playerHealthWidget;
 	//class UMyInventoryWidget* inventoryWidget;
-	UUserWidget* dialogWidget;
-	APlayerController* playerCont;
-	class AMyPlayer* player;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		UUserWidget* dialogWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		UUserWidget* escMenuWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		APlayerController* playerCont;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class AMyPlayer* player;
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	void ManageDialogWidget(bool shouldHide);
+	void ManageESCMenu();
 
 
 };

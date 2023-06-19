@@ -9,15 +9,14 @@ AMyHUD::AMyHUD() {
 	static ConstructorHelpers::FClassFinder<UMyPlayerStaminaWidget> staminaWidgetAsset(TEXT("/Game/Blueprints/UI/Player/MyStaminaWidget_BP"));
 	static ConstructorHelpers::FClassFinder<UMyEnemyLockOnWidget> lockOnWidgetAsset(TEXT("/Game/Blueprints/UI/Player/MyEnemyLockOnWidget_BP"));
 	static ConstructorHelpers::FClassFinder<UMyPlayerHealthUserWidget> playerHealthWidgetAsset(TEXT("/Game/Blueprints/UI/Player/MyPlayerHealthUserWidget_BP"));
-	//static ConstructorHelpers::FClassFinder<UMyInventoryWidget> inventoryWidgetAsset(TEXT("/Game/Blueprints/UI/MyInventoryWidget_BP"));
 	static ConstructorHelpers::FClassFinder<UUserWidget> dialogWidgetAsset(TEXT("/Game/Blueprints/UI/DialogUserWidget_BP"));
-
+	static ConstructorHelpers::FClassFinder<UUserWidget> escMenuWidgetAsset(TEXT("/Game/Blueprints/UI/ESCMenuUserWidget_BP"));
 
 	staminaWidgetTemplete = staminaWidgetAsset.Class;
 	lockOnWidgetTemplete = lockOnWidgetAsset.Class;
 	playerHealthWidgetTemplete = playerHealthWidgetAsset.Class;
 	dialogWidgetTemplete = dialogWidgetAsset.Class;
-	//inventoryWidgetTemplete = inventoryWidgetAsset.Class;
+	escMenuWidgetTemplete = escMenuWidgetAsset.Class;
 
 }
 
@@ -28,6 +27,7 @@ void AMyHUD::BeginPlay() {
 	player = Cast<AMyPlayer>(playerCont->GetPawn());
 
 	if (player) {
+		//set up stamina and health widget
 		staminaWidget = CreateWidget<UMyPlayerStaminaWidget>(GetWorld(), staminaWidgetTemplete);
 		staminaWidget->player = player;
 		staminaWidget->AddToViewport();
@@ -35,102 +35,99 @@ void AMyHUD::BeginPlay() {
 		playerHealthWidget = CreateWidget<UMyPlayerHealthUserWidget>(GetWorld(), playerHealthWidgetTemplete);
 		playerHealthWidget->player = player;
 		playerHealthWidget->AddToViewport();
-		//lockOnWidget = CreateWidget<UMyEnemyLockOnWidget>(GetWorld(), lockOnWidgetTemplete);
-
 	}
 
 	if (playerCont) {
+		//when player is locked on enemy spawn the lock on widget
 		if (player->lockedOnEnemy) {
-			//FVector2D screenPos;
-			//if (player->currentlyLockedOnEnemy != nullptr) {
-				//playerCont->ProjectWorldLocationToScreen(player->currentlyLockedOnEnemy->GetActorLocation(), screenPos);
-				//playerCont->ProjectWorldLocationToScreen(player->currentlyLockedOnEnemy->GetActorLocation(), screenPos, true);
-
-			lockOnWidget = CreateWidget<UMyEnemyLockOnWidget>(GetWorld(), lockOnWidgetTemplete);
-			//UCanvasPanelSlot* slot = Cast<UCanvasPanelSlot>(lockOnWidget->Image_30->Slot);
-			//screenPos = screenPos - FVector2D(-250, -250);
-			//slot->SetPosition(screenPos);
+			lockOnWidget = CreateWidget<UMyEnemyLockOnWidget>(GetWorld(), lockOnWidgetTemplete);			
 			lockOnWidget->AddToViewport();
-			//}
 		}
-
-		/*else {
-			lockOnWidget = CreateWidget<UMyEnemyLockOnWidget>(GetWorld(), lockOnWidgetTemplete);
-			lockOnWidget->RemoveFromViewport();
-		}*/
 	}
 }
 
 void AMyHUD::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
-	if (playerCont) {
-		if (player->lockedOnEnemy) {
-			//if (player->currentlyLockedOnEnemy != nullptr) {
-				//FVector2D screenPos;
-				//playerCont->ProjectWorldLocationToScreen(player->currentlyLockedOnEnemy->GetActorLocation(), screenPos, true);
-
-			if (lockOnWidget == nullptr) {
-				lockOnWidget = CreateWidget<UMyEnemyLockOnWidget>(GetWorld(), lockOnWidgetTemplete);
-			}
-			//	screenPos = screenPos - FVector2D(-250, -250);
-			//	UCanvasPanelSlot* slot = Cast<UCanvasPanelSlot>(lockOnWidget->Image_30->Slot);
-				//if (slot) {
-
-				//	slot->SetPosition(screenPos);
-			if (!lockOnWidget->GetIsVisible()) {
-				lockOnWidget->AddToViewport();
-			}
-
-			//}
-		//}
-		}
-
-		else {
-			if (lockOnWidget != nullptr) {
-				lockOnWidget->RemoveFromViewport();
-			}
-		}
-
-		/*	if (player->showInventory) {
-				if (inventoryWidget == nullptr) {
-					inventoryWidget = CreateWidget<UMyInventoryWidget>(GetWorld(), inventoryWidgetTemplete);
+	if (playerCont != nullptr) {
+		if (player != nullptr) {
+			if (player->lockedOnEnemy) {
+				//if player is locked on enemy spawn the lock on widget
+				if (lockOnWidget == nullptr) {
+					lockOnWidget = CreateWidget<UMyEnemyLockOnWidget>(GetWorld(), lockOnWidgetTemplete);
 				}
-				//	screenPos = screenPos - FVector2D(-250, -250);
-				//	UCanvasPanelSlot* slot = Cast<UCanvasPanelSlot>(lockOnWidget->Image_30->Slot);
-					//if (slot) {
-
-					//	slot->SetPosition(screenPos);
-				if (!inventoryWidget->GetIsVisible()) {
-					inventoryWidget->AddToViewport();
+			
+				if (lockOnWidget != nullptr) {
+					if (!lockOnWidget->GetIsVisible()) {
+						lockOnWidget->AddToViewport();
+					}
 				}
-			}
 
+			}
+			//once player unlocks remove the lock on widget
 			else {
-				if (inventoryWidget != nullptr) {
-					inventoryWidget->RemoveFromViewport();
+				if (lockOnWidget != nullptr && lockOnWidget->GetIsVisible()) {
+					lockOnWidget->RemoveFromViewport();
 				}
-			}*/
+			}
+		}
 	}
 
-	
+
 }
 
 void AMyHUD::ManageDialogWidget(bool shouldHide) {
-	
+
 	if (dialogWidget == nullptr) {
 		dialogWidget = CreateWidget<UUserWidget>(GetWorld(), dialogWidgetTemplete);
 	}
-	
+
+	//hides the dialog widget once player goes too far from the NPC
 	if (shouldHide) {
 		if (dialogWidget != nullptr) {
-			dialogWidget->RemoveFromViewport();
+			if (dialogWidget->IsInViewport()) {
+				dialogWidget->RemoveFromViewport();
+			}
 		}
 	}
 
+	//shows the dialog widget once player gets close enough to the NPC
 	else {
-		if (!dialogWidget->GetIsVisible()) {
-			dialogWidget->AddToViewport();
+		if (dialogWidget != nullptr) {
+			if (!dialogWidget->GetIsVisible()) {
+				dialogWidget->AddToViewport();
+			}
+		}
+	}
+
+}
+
+void AMyHUD::ManageESCMenu() {
+	if (escMenuWidget == nullptr) {
+		escMenuWidget = CreateWidget<UUserWidget>(GetWorld(), escMenuWidgetTemplete);
+	}
+
+	if (escMenuWidget != nullptr) {
+		APlayerController* playerController = UGameplayStatics::GetPlayerController(this, 0);
+
+		//hides ESC menu and hides mouse cursor
+		if (escMenuWidget->IsInViewport()) {
+			escMenuWidget->RemoveFromViewport();
+			UWidgetBlueprintLibrary::SetInputMode_GameOnly(playerController);
+			playerController->bShowMouseCursor = false;
+			playerController->bEnableClickEvents = false;
+			playerController->bEnableMouseOverEvents = false;
+			return;
+		}
+
+		//shows ESC menu and enables mouse cursor
+		if (!escMenuWidget->GetIsVisible()) {
+			escMenuWidget->AddToViewport();
+			UWidgetBlueprintLibrary::SetInputMode_GameAndUIEx(playerController);
+			playerController->bShowMouseCursor = true;
+			playerController->bEnableClickEvents = true;
+			playerController->bEnableMouseOverEvents = true;
+			return;
 		}
 	}
 

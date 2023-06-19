@@ -12,6 +12,7 @@
 class MyEnemyCorpseCharacter;
 class MyPlayer;
 class MyHUD;
+class MyQuestAIRescuedManager;
 UCLASS()
 class MYSCHOOLPROJECT_API AMyQuestGiveAI : public AActor
 {
@@ -28,7 +29,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	void BindToInput();
+	//void BindToInput();
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -48,12 +49,22 @@ public:
 
 	bool rescued{ false };
 
-	int dialogIndex{ false };
+	int dialogIndex{ 0 };
 
 	UTextRenderComponent* textComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float maxDistanceDialog{ 50.0f };
 
-	void HandleDialog();
+	class AMyPlayer* player;
+
+	FTimerHandle destroyTimerHandle;
+
+	//void HandleDialog();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool last{ false };
+	bool activatedText{ false };
+	class AMyQuestAIRescuedManager* manager;
+
+	void Delete();
 };

@@ -4,6 +4,7 @@
 #include "MyQuestGiveAI.h"
 #include "MyPlayer.h"
 #include "MyHUD.h"
+#include "MyQuestAIRescuedManager.h"
 #include "MyEnemyCorpseCharacter.h"
 
 // Sets default values
@@ -13,8 +14,6 @@ AMyQuestGiveAI::AMyQuestGiveAI()
 	PrimaryActorTick.bCanEverTick = true;
 	mesh = CreateDefaultSubobject<USkeletalMeshComponent>("Mesh");
 	RootComponent = mesh;
-	dialogStartRange = CreateDefaultSubobject<UStaticMeshComponent>("DialogStartRange");
-	dialogStartRange->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -22,7 +21,7 @@ void AMyQuestGiveAI::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AMyQuestGiveAI::BindToInput();
+	//AMyQuestGiveAI::BindToInput();
 
 	TInlineComponentArray<UActorComponent*> Components;
 	GetComponents(Components);
@@ -32,10 +31,11 @@ void AMyQuestGiveAI::BeginPlay()
 		if (Components[i]->ComponentHasTag("Text")) {
 			textComp = Cast<UTextRenderComponent>(Components[i]);
 		}
-
 	}
-
-	textComp->SetText(FText::FromString(dialogNotAllRescued[0]));
+	if (textComp != nullptr) {
+		textComp->SetText(FText::FromString(dialogNotAllRescued[0]));
+	}
+	player = Cast<AMyPlayer>(GetWorld()->GetFirstPlayerController()->GetCharacter());
 }
 
 // Called every frame
@@ -43,65 +43,63 @@ void AMyQuestGiveAI::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//checks if the NPC is rescued
+	//the enemies needed to be killed for the  NPC to be rescued are stored in an array
+	//the enemy gets removed from the array when they die
+	//when they array is empty the NPC is rescued
 	for (int i = 0; i < enemiesNeededToDie.Num(); i++) {
-		if (enemiesNeededToDie[i]->isDead) {
+		if (enemiesNeededToDie[i] != nullptr) {
+			if (enemiesNeededToDie[i]->isDead) {
+				enemiesNeededToDie.RemoveAt(i);
+			}
+		}
+
+		else {
 			enemiesNeededToDie.RemoveAt(i);
 		}
 	}
-
-	if (enemiesNeededToDie.Num() <= 0) {
+	//once rescued changes the text to a yellow exclamation mark 
+	//that looks like the NPC has quest for the player
+	if (enemiesNeededToDie.Num() == 0 || enemiesNeededToDie.IsEmpty()) {
 		if (!rescued) {
 			dialogIndex++;
 			textComp->SetText(FText::FromString(dialogNotAllRescued[dialogIndex]));
 			textComp->SetTextRenderColor(FColor::Yellow);
 			rescued = true;
-
 		}
 
 	}
 
+	//if player is near enough to see the text
+	//the text gets rotated to always face the camera so player can always read the text without problem
 	if (textComp) {
-		FVector playerLocation = Cast<AMyPlayer>(GetWorld()->GetFirstPlayerController()->GetCharacter())->cameraAttach->GetComponentLocation();
-		FRotator newRot = UKismetMathLibrary::FindLookAtRotation(textComp->GetComponentLocation(), playerLocation);
-		textComp->SetWorldRotation(newRot);
-	}
-
-	if (rescued) {
-		FVector playerLocation = Cast<AMyPlayer>(GetWorld()->GetFirstPlayerController()->GetCharacter())->playerSkeletalMesh->GetComponentLocation();
-		FRotator meshRot = UKismetMathLibrary::FindLookAtRotation(mesh->GetComponentLocation(), playerLocation) - FRotator(0, 90, 0);
-		mesh->SetWorldRotation(meshRot);
-
-		float distance = FVector::Distance(Cast<AMyPlayer>(GetWorld()->GetFirstPlayerController()->GetCharacter())->playerSkeletalMesh->GetComponentLocation(), mesh->GetComponentLocation());
-
-		if (distance > maxDistanceDialog) {
-			AMyHUD* hud = UGameplayStatics::GetPlayerController(this, 0)->GetHUD<AMyHUD>();
-			hud->ManageDialogWidget(true);
+		if (player == nullptr) {
+			player = Cast<AMyPlayer>(GetWorld()->GetFirstPlayerController()->GetCharacter());
 		}
-
-		else {
-			AMyHUD* hud = UGameplayStatics::GetPlayerController(this, 0)->GetHUD<AMyHUD>();
-			hud->ManageDialogWidget(false);
+		if (player != nullptr) {
+			FVector playerLocation = player->cameraAttach->GetComponentLocation();
+			if (FVector::Distance(GetActorLocation(), playerLocation) <= 2000.0f) {
+				FRotator newRot = UKismetMathLibrary::FindLookAtRotation(textComp->GetComponentLocation(), playerLocation);
+				if (textComp != nullptr) {
+					textComp->SetWorldRotation(newRot);
+				}
+			}
+		}
+	}
+	
+	//once rescued the NPC should always face the player
+	if (rescued) {
+		if (player != nullptr && mesh != nullptr) {
+			float distance = FVector::Distance(player->playerSkeletalMesh->GetComponentLocation(), mesh->GetComponentLocation());
+			if (distance > 5.0f && distance <= 2000.0f) {
+				FVector playerLocation = player->playerSkeletalMesh->GetComponentLocation();
+				FRotator meshRot = UKismetMathLibrary::FindLookAtRotation(mesh->GetComponentLocation(), playerLocation) - FRotator(0, 90, 0);
+				mesh->SetWorldRotation(meshRot);
+			}
 		}
 	}
 }
 
-void AMyQuestGiveAI::BindToInput()
-{
-	InputComponent = NewObject<UInputComponent>(this);
-	InputComponent->RegisterComponent();
-	if (InputComponent)
-	{
-		InputComponent->BindAction("DialogTalk", IE_Pressed, this, &AMyQuestGiveAI::HandleDialog);
-		EnableInput(GetWorld()->GetFirstPlayerController());
-	}
-}
-
-void AMyQuestGiveAI::HandleDialog() {
-	if (rescued) {
-		if (dialogIndex + 1 < dialogNotAllRescued.Num()) {
-			dialogIndex++;
-			textComp->SetText(FText::FromString(dialogNotAllRescued[dialogIndex]));
-			textComp->SetTextRenderColor(FColor::Black);
-		}
-	}
+void AMyQuestGiveAI::Delete() {
+	Destroy();
 }

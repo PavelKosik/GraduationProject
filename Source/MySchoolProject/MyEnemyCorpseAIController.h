@@ -56,8 +56,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float minSteerDistance{ 100.0f };
 
-	UCrowdManager* CrowdManager;
-
 	float waitTimeBetweenAttacks{ (minWaitTimeBetweenAttacks + maxWaitTimeBetweenAttacks) / 2.0f };
 	FTimerHandle waitTimeBetweenAttacksTimerHandle;
 	float currentAttackTime{ 0.0f };
@@ -68,8 +66,12 @@ public:
 	int currentPathIndex{ 0 };
 
 	bool finishedPath{ false };
-	UNavigationSystemV1* navMesh;
-	class AMyEnemyCorpseCharacter* myEnemyLogic;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		UNavigationSystemV1* navMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class AMyEnemyCorpseCharacter* myEnemyLogic;
+
 	bool chasingPlayer{ false };
 	bool shouldReturnToPos{ false };
 	FTimerHandle enemyAttackTimerHandle;

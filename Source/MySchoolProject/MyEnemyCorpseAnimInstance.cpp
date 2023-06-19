@@ -7,14 +7,15 @@
 
 void UMyEnemyCorpseAnimInstance::BlueprintBeginPlay() {
 	Super::BlueprintBeginPlay();
-	myCorpse =Cast<AMyEnemyCorpseCharacter>(GetOwningActor());
-	
+	myCorpse = Cast<AMyEnemyCorpseCharacter>(GetOwningActor());
+
 }
 
 void UMyEnemyCorpseAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	if (myCorpse) {
+	//gets all the values for enemy animation states
+	if (myCorpse != nullptr) {
 		isMoving = myCorpse->isMoving;
 		isDead = myCorpse->isDead;
 		isAttacking = myCorpse->isAttacking;
@@ -22,7 +23,6 @@ void UMyEnemyCorpseAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	}
 
 	else {
-		UE_LOG(LogTemp, Warning, TEXT("Corpse failed load"));
 		myCorpse = Cast<AMyEnemyCorpseCharacter>(GetOwningActor());
 	}
 }

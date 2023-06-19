@@ -38,7 +38,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float currentHealth{ maxHealth };
 
-	class AMyPlayer* player;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class AMyPlayer* player;
 
 	bool alreadyTookDamageFromAttack{ false };
 	bool isMoving{ false };
@@ -62,9 +63,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float steerMoveSpeed;
 
-	class UMyEnemyHealthUserWidget* enemyHealthWidget;
-	
-	class AMyEnemyCorpseAIController* myCont;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UMyEnemyHealthUserWidget* enemyHealthWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class AMyEnemyCorpseAIController* myCont;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		UCharacterMovementComponent* movementComponent;
+
 	FTimerHandle showHealthAfterTakenDamageTimerHandle;
 
 	void MyTakeDamage(float damage);
@@ -75,4 +82,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void MyDamagePlayer(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	
+	FTimerHandle dieTimerHandle;
+	void Die();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float timeBeforeDestroy{ 1.5f };
 };

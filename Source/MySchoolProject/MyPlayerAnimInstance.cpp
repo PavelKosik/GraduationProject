@@ -7,7 +7,6 @@
 
 void UMyPlayerAnimInstance::BlueprintBeginPlay() {
 	Super::BlueprintBeginPlay();
-	//owner = GetOwningActor();
 	myPlayer = Cast<AMyPlayer>(GetWorld()->GetFirstPlayerController()->GetPawn());
 }
 
@@ -25,7 +24,7 @@ void UMyPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 }
 
 void UMyPlayerAnimInstance::AssingValues() {
-
+	//loads all the states from the player controller to be used for the animation transitions
 	isRunning = myPlayer->isRunning;
 	isMoving = myPlayer->isMoving;
 	isLightAttacking1 = myPlayer->isLightAttacking1;

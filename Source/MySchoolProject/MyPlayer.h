@@ -15,10 +15,15 @@
 #include "Engine/StaticMesh.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Navigation/CrowdAgentInterface.h"
+#include "Blueprint/UserWidget.h"
 #include "Navigation/CrowdManager.h"
 #include "MyPlayer.generated.h"
 
 class MyEnemyCorpseCharacter;
+class MyQuestGiveAI;
+class MyHUD;
+class MyQuestAIRescuedManager;
+
 UCLASS()
 class MYSCHOOLPROJECT_API AMyPlayer : public ACharacter
 {
@@ -92,15 +97,16 @@ public:
 		UStaticMeshComponent* playerAttackHitbox;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		UStaticMeshComponent* playerDialogHitbox;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UStaticMeshComponent* playerSwordHolder;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UStaticMeshComponent* playerShieldHolder;
 
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UStaticMeshComponent* playerArmorHolder;
-
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UStaticMeshComponent* bootLHolder;
@@ -109,8 +115,8 @@ public:
 		UStaticMeshComponent* bootRHolder;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		UStaticMeshComponent* shoulderRHolder; 
-	
+		UStaticMeshComponent* shoulderRHolder;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UStaticMeshComponent* shoulderLHolder;
 
@@ -144,6 +150,12 @@ public:
 	float currentPlayerHealth{ playerMaxHealth };
 
 	bool isRolling{ false };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class AMyHUD* hud;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		int invertedMouse{ 1 };
 
 	float currentRollTime{ 0.0f };
 
@@ -180,9 +192,11 @@ public:
 
 	float deltaTimeForRolling;
 
-	UCharacterMovementComponent* movementComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		UCharacterMovementComponent* movementComponent;
 
-	TArray<class AMyEnemyCorpseCharacter*> overlappingEnemies;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<class AMyEnemyCorpseCharacter*> overlappingEnemies;
 
 	bool lockedOnEnemy{ false };
 	AActor* currentlyLockedOnEnemy{ nullptr };
@@ -195,11 +209,16 @@ public:
 	float blockTime{ 0.0f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float playerArmorValue{ 0 };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float staggerDuration{ 0.25f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float restartLevelDuration{ 2.5f };
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<class AMyQuestGiveAI*> dialogAI;
 	//	bool showInventory{ false };
 
 	void MoveHorizontal(float horizontal);
@@ -234,6 +253,13 @@ public:
 	UFUNCTION()
 		void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UFUNCTION()
+		void OnOverlapBeginDialog(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void OnOverlapEndDialog(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+
 	void LockOnEnemy();
 
 	void LockToDifferentEnemyAfterKill();
@@ -243,11 +269,16 @@ public:
 
 	void RestartLevelAfterPlayerDie();
 
-	void BlockStart();
+	/*void BlockStart();
 
 	void BlockEnd();
-
+	*/
 	void EquipItem(TArray<UStaticMesh*> itemToEquip, TArray<FRotator> rotation, FName type);
 
 	void DeEquipItem(FName type);
+
+	void HandleDialog();
+
+	UFUNCTION(BlueprintCallable)
+		void ESCMenuManage();
 };
